@@ -694,6 +694,64 @@ export async function updateCharacterMeta({
   }
 }
 
+export async function updateCharacter({
+  id,
+  userId,
+  name,
+  description,
+  characterCard,
+}: {
+  id: string;
+  userId: string;
+  name?: string;
+  description?: string;
+  characterCard?: string;
+}) {
+  try {
+    const updateValues: Partial<
+      Pick<Characters, 'name' | 'description' | 'characterCard'>
+    > & { updatedAt: Date } = { updatedAt: new Date() };
+
+    if (typeof name === 'string') updateValues.name = name;
+    if (typeof description === 'string') updateValues.description = description;
+    if (typeof characterCard === 'string')
+      updateValues.characterCard = characterCard;
+
+    const [updated] = await db
+      .update(characters)
+      .set(updateValues)
+      .where(and(eq(characters.id, id), eq(characters.userId, userId)))
+      .returning();
+    return updated;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update character',
+    );
+  }
+}
+
+export async function deleteCharacter({
+  id,
+  userId,
+}: {
+  id: string;
+  userId: string;
+}) {
+  try {
+    const [deleted] = await db
+      .delete(characters)
+      .where(and(eq(characters.id, id), eq(characters.userId, userId)))
+      .returning();
+    return deleted;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to delete character',
+    );
+  }
+}
+
 export async function createCharacter({
   userId,
   name,
@@ -721,7 +779,10 @@ export async function createCharacter({
       .returning();
     return created;
   } catch (error) {
-    throw new ChatSDKError('bad_request:database', 'Failed to create character');
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to create character',
+    );
   }
 }
 
