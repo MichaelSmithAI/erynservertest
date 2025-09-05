@@ -206,6 +206,7 @@ export function Chat({
               sendMessage={sendMessage}
               selectedVisibilityType={visibilityType}
               selectedModelId={initialChatModel}
+              stopTTS={stopTTS}
               characterSelector={
                 <CharacterSelectorComponent
                   selectedCharacterId={selectedCharacterId}
@@ -247,6 +248,7 @@ export function Chat({
         isReadonly={isReadonly}
         selectedVisibilityType={visibilityType}
         selectedModelId={initialChatModel}
+        stopTTS={stopTTS}
       />
     </>
   );

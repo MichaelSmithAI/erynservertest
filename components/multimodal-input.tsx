@@ -61,6 +61,7 @@ function PureMultimodalInput({
   className,
   selectedVisibilityType,
   selectedModelId,
+  stopTTS,
   characterSelector,
 }: {
   chatId: string;
@@ -76,6 +77,7 @@ function PureMultimodalInput({
   className?: string;
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
+  stopTTS: () => void;
   characterSelector?: React.ReactNode;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -241,11 +243,13 @@ function PureMultimodalInput({
 
   const handleMicClick = useCallback(async () => {
     if (micStatus === 'idle' || micStatus === 'error') {
+      // Stop any currently playing TTS before starting microphone recording
+      stopTTS();
       await startRecording();
     } else if (micStatus === 'recording') {
       stopRecording();
     }
-  }, [micStatus, startRecording, stopRecording]);
+  }, [micStatus, startRecording, stopRecording, stopTTS]);
 
   // When recording stops due to silence or user action, transcribe and send
   useEffect(() => {
@@ -381,7 +385,7 @@ function PureMultimodalInput({
           onChange={handleInput}
           minHeight={72}
           maxHeight={200}
-          disableAutoResize={true}
+          disableAutoResize={false}
           className="text-base resize-none p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-transparent !border-0 !border-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
           rows={1}
           autoFocus
@@ -439,6 +443,7 @@ export const MultimodalInput = memo(
     if (prevProps.selectedVisibilityType !== nextProps.selectedVisibilityType)
       return false;
     if (prevProps.selectedModelId !== nextProps.selectedModelId) return false;
+    if (prevProps.stopTTS !== nextProps.stopTTS) return false;
 
     return true;
   },

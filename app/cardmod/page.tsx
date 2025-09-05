@@ -285,7 +285,7 @@ export default function CharacterEditorPage() {
           </label>
           <Textarea
             id={fieldId}
-            className="min-h-[100px]"
+            className="min-h-[100px] resize-none field-sizing-content max-h-[300px] overflow-hidden"
             value={JSON.stringify(value, null, 2)}
             onChange={(e) => {
               try {
@@ -311,7 +311,7 @@ export default function CharacterEditorPage() {
             </label>
             <Textarea
               id={fieldId}
-              className="min-h-[80px]"
+              className="min-h-[80px] resize-none field-sizing-content max-h-[300px] overflow-hidden"
               value={value}
               onChange={(e) => handleFieldChange(key, e.target.value)}
             />
@@ -379,7 +379,7 @@ export default function CharacterEditorPage() {
         </label>
         <Textarea
           id={fieldId}
-          className="min-h-[80px]"
+          className="min-h-[80px] resize-none field-sizing-content max-h-[300px] overflow-hidden"
           value={JSON.stringify(value, null, 2)}
           onChange={(e) => {
             try {
@@ -465,23 +465,27 @@ export default function CharacterEditorPage() {
               <label htmlFor="character-name" className="text-sm font-medium">
                 Name
               </label>
-              <Input
+              <Textarea
                 id="character-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                className="min-h-[40px] resize-none field-sizing-content max-h-[120px] overflow-hidden"
+                rows={1}
               />
             </div>
             <div className="flex flex-col gap-2">
               <label
                 htmlFor="character-description"
-                className="text-sm font-medium"
+                className="text-sm text-pink-500 font-medium"
               >
                 Description
               </label>
-              <Input
+              <Textarea
                 id="character-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                className=""
+                rows={1}
               />
             </div>
           </div>
@@ -519,7 +523,7 @@ export default function CharacterEditorPage() {
                 </label>
                 <Textarea
                   id="character-card-raw"
-                  className="min-h-[300px] font-mono"
+                  className="min-h-[400px] font-mono resize-y field-sizing-content max-h-[2000px] overflow-hidden"
                   value={characterCard}
                   onChange={(e) => setCharacterCard(e.target.value)}
                   placeholder="Paste character card JSON here"
