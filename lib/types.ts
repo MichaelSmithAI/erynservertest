@@ -3,6 +3,8 @@ import type { getWeather } from './ai/tools/get-weather';
 import type { createDocument } from './ai/tools/create-document';
 import type { updateDocument } from './ai/tools/update-document';
 import type { requestSuggestions } from './ai/tools/request-suggestions';
+import type { modifyBackground } from './ai/tools/modify-background';
+import type { displayBackground } from './ai/tools/display-background';
 import type { InferUITool, UIMessage } from 'ai';
 
 import type { ArtifactKind } from '@/components/artifact';
@@ -22,12 +24,16 @@ type updateDocumentTool = InferUITool<ReturnType<typeof updateDocument>>;
 type requestSuggestionsTool = InferUITool<
   ReturnType<typeof requestSuggestions>
 >;
+type modifyBackgroundTool = InferUITool<ReturnType<typeof modifyBackground>>;
+type displayBackgroundTool = InferUITool<ReturnType<typeof displayBackground>>;
 
 export type ChatTools = {
   getWeather: weatherTool;
   createDocument: createDocumentTool;
   updateDocument: updateDocumentTool;
   requestSuggestions: requestSuggestionsTool;
+  modifyBackground: modifyBackgroundTool;
+  displayBackground: displayBackgroundTool;
 };
 
 export type CustomUIDataTypes = {
@@ -42,6 +48,11 @@ export type CustomUIDataTypes = {
   kind: ArtifactKind;
   clear: null;
   finish: null;
+  backgroundChange: {
+    imageUrl: string;
+    lightingState: string;
+    description: string;
+  };
 };
 
 export type ChatMessage = UIMessage<

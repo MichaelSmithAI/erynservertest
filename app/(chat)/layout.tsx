@@ -6,6 +6,7 @@ import { auth } from '../(auth)/auth';
 import Script from 'next/script';
 import { DataStreamProvider } from '@/components/data-stream-provider';
 import { TTSProvider } from '@/components/tts-provider';
+import { BackgroundProvider } from '@/components/background-provider';
 
 export const experimental_ppr = true;
 
@@ -24,12 +25,14 @@ export default async function Layout({
         strategy="beforeInteractive"
       />
       <DataStreamProvider>
-        <TTSProvider>
-          <SidebarProvider defaultOpen={!isCollapsed}>
-            <AppSidebar user={session?.user} />
-            <SidebarInset>{children}</SidebarInset>
-          </SidebarProvider>
-        </TTSProvider>
+        <BackgroundProvider>
+          <TTSProvider>
+            <SidebarProvider defaultOpen={!isCollapsed}>
+              <AppSidebar user={session?.user} />
+              <SidebarInset>{children}</SidebarInset>
+            </SidebarProvider>
+          </TTSProvider>
+        </BackgroundProvider>
       </DataStreamProvider>
     </>
   );

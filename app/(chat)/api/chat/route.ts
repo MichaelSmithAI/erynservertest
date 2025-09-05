@@ -7,7 +7,7 @@ import {
   streamText,
 } from 'ai';
 import { auth, type UserType } from '@/app/(auth)/auth';
-import { type RequestHints, systemPrompt } from '@/lib/ai/prompts';
+import { systemPrompt, type RequestHints } from '@/lib/ai/prompts';
 import {
   createStreamId,
   deleteChatById,
@@ -19,10 +19,9 @@ import {
 } from '@/lib/db/queries';
 import { convertToUIMessages, generateUUID } from '@/lib/utils';
 import { generateTitleFromUserMessage } from '../../actions';
-import { createDocument } from '@/lib/ai/tools/create-document';
-import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
-import { getWeather } from '@/lib/ai/tools/get-weather';
+import { modifyBackground } from '@/lib/ai/tools/modify-background';
+import { displayBackground } from '@/lib/ai/tools/display-background';
 import { isProductionEnvironment } from '@/lib/constants';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
@@ -38,7 +37,6 @@ import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { getCherryBoxModelMessages } from '@/lib/ai/prompt-templates/CherryBox_1.4';
 import { myProvider } from '@/lib/ai/providers';
-import { charactersTool } from '@/lib/ai/tools/create-new-char-card';
 import { ErynCard } from '@/lib/ai/prompt-templates/Eryn.card';
 export const maxDuration = 60;
 
@@ -102,9 +100,9 @@ export async function POST(request: Request) {
       differenceInHours: 24,
     });
 
-    if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
-      return new ChatSDKError('rate_limit:chat').toResponse();
-    }
+    // if (messageCount > entitlementsByUserType[userType].maxMessagesPerDay) {
+    //   return new ChatSDKError('rate_limit:chat').toResponse();
+    // }
 
     const chat = await getChatById({ id });
 
@@ -157,7 +155,7 @@ export async function POST(request: Request) {
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          // system: systemPrompt({ selectedChatModel, requestHints }),
+          system: systemPrompt({ selectedChatModel, requestHints }),
           messages: [
             ...getCherryBoxModelMessages(
               selectedCharacterCard ? selectedCharacterCard : ErynCard,
@@ -166,16 +164,13 @@ export async function POST(request: Request) {
           ],
           stopWhen: stepCountIs(5),
           experimental_transform: smoothStream({ chunking: 'word' }),
-          // tools: {
-          //   getWeather,
-          //   createDocument: createDocument({ session, dataStream }),
-          //   updateDocument: updateDocument({ session, dataStream }),
-          //   requestSuggestions: requestSuggestions({
-          //     session,
-          //     dataStream,
-          //   }),
-          //   // characters: charactersTool({ session, dataStream }),
-          // },
+          tools: {
+            modifyBackground: modifyBackground({
+              session,
+              dataStream,
+            }),
+            displayBackground: displayBackground(),
+          },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: 'stream-text',

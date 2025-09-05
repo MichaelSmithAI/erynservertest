@@ -9,8 +9,8 @@ export interface ChatModel {
 export const chatModels: Array<ChatModel> = [
   {
     id: 'chat-model',
-    name: 'DeepSeek V3.1',
-    description: 'Advanced deepseek v3.1 model with text capabilities',
+    name: 'DeepSeek R1',
+    description: 'Advanced deepseek r1 model with text capabilities',
   },
   {
     id: 'chat-model-reasoning',

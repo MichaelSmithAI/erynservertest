@@ -1,10 +1,9 @@
 'use client';
-import cx from 'classnames';
 import { AnimatePresence, motion } from 'framer-motion';
 import { memo, useState } from 'react';
 import type { Vote } from '@/lib/db/schema';
 import { DocumentToolResult } from './document';
-import { PencilEditIcon, SparklesIcon, LoaderIcon } from './icons';
+import { PencilEditIcon, SparklesIcon } from './icons';
 import { Response } from './elements/response';
 import { MessageContent } from './elements/message';
 import {
@@ -27,6 +26,7 @@ import { MessageReasoning } from './message-reasoning';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import type { ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { GenerativeBackground } from '@/components/generative-background';
 
 // Type narrowing is handled by TypeScript's control flow analysis
 // The AI SDK provides proper discriminated unions for tool calls
@@ -194,6 +194,36 @@ const PurePreviewMessage = ({
                           output={<Weather weatherAtLocation={part.output} />}
                           errorText={undefined}
                         />
+                      )}
+                    </ToolContent>
+                  </Tool>
+                );
+              }
+
+              if (type === 'tool-displayBackground') {
+                const { toolCallId, state } = part;
+
+                return (
+                  <Tool key={toolCallId} defaultOpen={true}>
+                    <ToolHeader type="tool-displayBackground" state={state} />
+                    <ToolContent>
+                      {state === 'input-available' && (
+                        <ToolInput input={part.input} />
+                      )}
+                      {state === 'output-available' && part.output && (
+                        <ToolOutput
+                          output={
+                            <GenerativeBackground
+                              imageUrl={part.output.imageUrl}
+                              lightingState={part.output.lightingState}
+                              description={part.output.description}
+                            />
+                          }
+                          errorText={undefined}
+                        />
+                      )}
+                      {state === 'output-error' && (
+                        <ToolOutput output={null} errorText={part.errorText} />
                       )}
                     </ToolContent>
                   </Tool>

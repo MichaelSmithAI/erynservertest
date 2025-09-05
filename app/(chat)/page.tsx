@@ -4,6 +4,7 @@ import { Chat } from '@/components/chat';
 import { DEFAULT_CHAT_MODEL } from '@/lib/ai/models';
 import { generateUUID } from '@/lib/utils';
 import { DataStreamHandler } from '@/components/data-stream-handler';
+import { BackgroundOverlay } from '@/components/background-overlay';
 import { auth } from '../(auth)/auth';
 import { redirect } from 'next/navigation';
 
@@ -33,6 +34,7 @@ export default async function Page() {
           autoResume={false}
         />
         <DataStreamHandler />
+        <BackgroundOverlay />
       </>
     );
   }
@@ -50,6 +52,7 @@ export default async function Page() {
         autoResume={false}
       />
       <DataStreamHandler />
+      <BackgroundOverlay />
     </>
   );
 }

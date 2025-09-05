@@ -24,7 +24,7 @@ export const myProvider = isTestEnvironment
   : customProvider({
       languageModels: {
         'chat-model': fireworks.languageModel(
-          'accounts/fireworks/models/deepseek-v3p1',
+          'accounts/fireworks/models/deepseek-r1-0528',
         ),
         'chat-model-reasoning': wrapLanguageModel({
           model: fireworks.languageModel(
@@ -36,7 +36,7 @@ export const myProvider = isTestEnvironment
           'accounts/fireworks/models/deepseek-v3-0324',
         ),
         'chat-model-kimi': fireworks.languageModel(
-          'accounts/fireworks/models/kimi-k2-instruct',
+          'accounts/fireworks/models/kimi-k2-instruct-0905',
         ),
         'title-model': fireworks.languageModel(
           'accounts/fireworks/models/gpt-oss-20b',
