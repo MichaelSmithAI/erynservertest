@@ -430,10 +430,7 @@ export default function CharacterEditorPage() {
   return (
     <div className="container mx-auto max-w-5xl p-4 md:p-8 flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Character Manager</h1>
-      <Link
-        className="text-sm font-semibold text-pink-500 text-muted-foreground"
-        href="/"
-      >
+      <Link className="text-sm font-semibold text-pink-500 " href="/">
         Back to Home
       </Link>
 
