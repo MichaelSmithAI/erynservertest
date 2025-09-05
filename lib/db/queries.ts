@@ -27,12 +27,15 @@ import {
   type DBMessage,
   type Chat,
   stream,
+  characters,
+  type Characters,
 } from './schema';
 import type { ArtifactKind } from '@/components/artifact';
 import { generateUUID } from '../utils';
 import { generateHashedPassword } from './utils';
 import type { VisibilityType } from '@/components/visibility-selector';
 import { ChatSDKError } from '../errors';
+import { ErynCard } from '@/lib/ai/prompt-templates/Eryn.card';
 
 // Optionally, if not using email/pass login, you can
 // use the Drizzle adapter for Auth.js / NextAuth
@@ -515,6 +518,243 @@ export async function createStreamId({
     throw new ChatSDKError(
       'bad_request:database',
       'Failed to create stream id',
+    );
+  }
+}
+
+export async function listCharactersByUserId({
+  userId,
+}: {
+  userId: string;
+}) {
+  try {
+    return await db
+      .select()
+      .from(characters)
+      .where(eq(characters.userId, userId))
+      .orderBy(desc(characters.createdAt));
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to list characters');
+  }
+}
+
+export async function listAllCharacters() {
+  try {
+    return await db
+      .select()
+      .from(characters)
+      .orderBy(desc(characters.createdAt));
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to list characters');
+  }
+}
+
+export async function getCharacterById({
+  id,
+  userId,
+}: {
+  id: string;
+  userId: string;
+}) {
+  try {
+    const [character] = await db
+      .select()
+      .from(characters)
+      .where(and(eq(characters.id, id), eq(characters.userId, userId)))
+      .limit(1);
+    return character;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to get character');
+  }
+}
+
+export async function getCharacterByIdPublic({
+  id,
+}: {
+  id: string;
+}) {
+  try {
+    const [character] = await db
+      .select()
+      .from(characters)
+      .where(eq(characters.id, id))
+      .limit(1);
+    return character;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to get character');
+  }
+}
+
+export async function cloneCharacter({
+  sourceCharacterId,
+  userId,
+  overrides,
+}: {
+  sourceCharacterId: string;
+  userId: string;
+  overrides?: Partial<
+    Pick<Characters, 'name' | 'description' | 'characterCard'>
+  >;
+}) {
+  try {
+    const [source] = await db
+      .select()
+      .from(characters)
+      .where(eq(characters.id, sourceCharacterId))
+      .limit(1);
+
+    if (!source) {
+      throw new ChatSDKError(
+        'not_found:database',
+        'Source character not found',
+      );
+    }
+
+    const insertValues: Omit<Characters, 'id' | 'createdAt' | 'updatedAt'> & {
+      id: string;
+      createdAt: Date;
+      updatedAt: Date;
+    } = {
+      id: generateUUID(),
+      name: overrides?.name ?? `${source.name} (Copy)`,
+      description: overrides?.description ?? source.description,
+      userId,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      characterCard: overrides?.characterCard ?? source.characterCard,
+    };
+
+    const [created] = await db
+      .insert(characters)
+      .values(insertValues)
+      .returning();
+    return created;
+  } catch (error) {
+    if (error instanceof ChatSDKError) throw error;
+    throw new ChatSDKError('bad_request:database', 'Failed to clone character');
+  }
+}
+
+export async function updateCharacterCard({
+  id,
+  userId,
+  characterCard,
+}: {
+  id: string;
+  userId: string;
+  characterCard: string;
+}) {
+  try {
+    const [updated] = await db
+      .update(characters)
+      .set({ characterCard, updatedAt: new Date() })
+      .where(and(eq(characters.id, id), eq(characters.userId, userId)))
+      .returning();
+    return updated;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update character',
+    );
+  }
+}
+
+export async function updateCharacterMeta({
+  id,
+  userId,
+  name,
+  description,
+}: {
+  id: string;
+  userId: string;
+  name?: string;
+  description?: string;
+}) {
+  try {
+    const updateValues: Partial<Pick<Characters, 'name' | 'description'>> & {
+      updatedAt: Date;
+    } = {
+      updatedAt: new Date(),
+    };
+
+    if (typeof name === 'string') updateValues.name = name;
+    if (typeof description === 'string') updateValues.description = description;
+
+    const [updated] = await db
+      .update(characters)
+      .set(updateValues)
+      .where(and(eq(characters.id, id), eq(characters.userId, userId)))
+      .returning();
+    return updated;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to update character metadata',
+    );
+  }
+}
+
+export async function createCharacter({
+  userId,
+  name,
+  description,
+  characterCard,
+}: {
+  userId: string;
+  name: string;
+  description: string;
+  characterCard: string;
+}) {
+  try {
+    const now = new Date();
+    const [created] = await db
+      .insert(characters)
+      .values({
+        id: generateUUID(),
+        userId,
+        name,
+        description,
+        characterCard,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .returning();
+    return created;
+  } catch (error) {
+    throw new ChatSDKError('bad_request:database', 'Failed to create character');
+  }
+}
+
+export async function seedDefaultCharacterIfEmpty({
+  userId,
+}: {
+  userId: string;
+}) {
+  try {
+    const existing = await db
+      .select({ id: characters.id })
+      .from(characters)
+      .limit(1);
+    if (existing.length > 0) return null;
+
+    const now = new Date();
+    const [created] = await db
+      .insert(characters)
+      .values({
+        id: generateUUID(),
+        name: ErynCard.data.name,
+        description: ErynCard.data.description.story_context,
+        userId,
+        createdAt: now,
+        updatedAt: now,
+        characterCard: JSON.stringify(ErynCard),
+      })
+      .returning();
+    return created;
+  } catch (error) {
+    throw new ChatSDKError(
+      'bad_request:database',
+      'Failed to seed default character',
     );
   }
 }

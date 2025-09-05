@@ -3,7 +3,6 @@ import {
   extractReasoningMiddleware,
   wrapLanguageModel,
 } from 'ai';
-import { gateway } from '@ai-sdk/gateway';
 import {
   artifactModel,
   chatModel,
@@ -11,6 +10,7 @@ import {
   titleModel,
 } from './models.test';
 import { isTestEnvironment } from '../constants';
+import { fireworks } from '@ai-sdk/fireworks';
 
 export const myProvider = isTestEnvironment
   ? customProvider({
@@ -23,12 +23,26 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
-        'chat-model': gateway.languageModel('xai/grok-2-vision-1212'),
+        'chat-model': fireworks.languageModel(
+          'accounts/fireworks/models/deepseek-v3p1',
+        ),
         'chat-model-reasoning': wrapLanguageModel({
-          model: gateway.languageModel('xai/grok-3-mini-beta'),
+          model: fireworks.languageModel(
+            'accounts/fireworks/models/gpt-oss-120b',
+          ),
           middleware: extractReasoningMiddleware({ tagName: 'think' }),
         }),
-        'title-model': gateway.languageModel('xai/grok-2-1212'),
-        'artifact-model': gateway.languageModel('xai/grok-2-1212'),
+        'chat-model-common': fireworks.languageModel(
+          'accounts/fireworks/models/deepseek-v3-0324',
+        ),
+        'chat-model-kimi': fireworks.languageModel(
+          'accounts/fireworks/models/kimi-k2-instruct',
+        ),
+        'title-model': fireworks.languageModel(
+          'accounts/fireworks/models/gpt-oss-20b',
+        ),
+        'artifact-model': fireworks.languageModel(
+          'accounts/fireworks/models/gpt-oss-120b',
+        ),
       },
     });

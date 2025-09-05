@@ -33,7 +33,7 @@ Do not update document right after creating it. Wait for user feedback or reques
 `;
 
 export const regularPrompt =
-  'You are a friendly assistant! Keep your responses concise and helpful.';
+  'You are a friendly assistant! Keep your responses concise and helpful. Do not reason or think.';
 
 export interface RequestHints {
   latitude: Geo['latitude'];
@@ -58,11 +58,11 @@ export const systemPrompt = ({
   requestHints: RequestHints;
 }) => {
   const requestPrompt = getRequestPromptFromHints(requestHints);
-
+  console.log('selectedChatModel', selectedChatModel);
   if (selectedChatModel === 'chat-model-reasoning') {
     return `${regularPrompt}\n\n${requestPrompt}`;
   } else {
-    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}`;
+    return `${regularPrompt}\n\n${requestPrompt}\n\n${artifactsPrompt}\n\n${charactersPrompt}`;
   }
 };
 
@@ -94,6 +94,26 @@ print(f"Factorial of 5 is: {factorial(5)}")
 
 export const sheetPrompt = `
 You are a spreadsheet creation assistant. Create a spreadsheet in csv format based on the given prompt. The spreadsheet should contain meaningful column headers and data.
+`;
+
+export const charactersPrompt = `
+The 
+"characters" tool lets you manage the user's Characters. Use it when the user asks to view, duplicate, or update a character.
+
+Actions:
+- list: Returns only characters owned by the signed-in user.
+- listAll: Returns all characters (any owner). Use to discover templates or public characters to clone from.
+- read: Provide { id }. Reads a character owned by the user including characterCard.
+- readPublic: Provide { id }. Reads any character by id (any owner) including characterCard.
+- clone: Provide { sourceCharacterId } (any owner allowed) and optional overrides { name, description, characterCard }. Creates a new character owned by the current user.
+- updateCard: Provide { id, characterCard }. Updates the characterCard of a character owned by the user.
+
+Guidelines:
+- You may read from any character. To discover options, call listAll.
+- Only modify characters owned by the current user. If unsure which ID to use, call list first.
+- Prefer read before updateCard when you need current details.
+- After clone or updateCard, summarize the change for the user.
+- Do not invent IDs; request clarification or call list to retrieve them.
 `;
 
 export const updateDocumentPrompt = (

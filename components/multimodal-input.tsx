@@ -14,7 +14,13 @@ import {
 import { toast } from 'sonner';
 import { useLocalStorage, useWindowSize } from 'usehooks-ts';
 
-import { ArrowUpIcon, PaperclipIcon, StopIcon } from './icons';
+import {
+  ArrowUpIcon,
+  PaperclipIcon,
+  StopIcon,
+  MicIcon,
+  MicOffIcon,
+} from './icons';
 import { PreviewAttachment } from './preview-attachment';
 import { Button } from './ui/button';
 import { SuggestedActions } from './suggested-actions';
@@ -28,12 +34,13 @@ import {
   PromptInputModelSelectTrigger,
   PromptInputModelSelectContent,
 } from './elements/prompt-input';
-import { SelectItem, SelectValue } from '@/components/ui/select';
+import { SelectItem } from '@/components/ui/select';
 import equal from 'fast-deep-equal';
 import type { UseChatHelpers } from '@ai-sdk/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowDown } from 'lucide-react';
 import { useScrollToBottom } from '@/hooks/use-scroll-to-bottom';
+import { useMicRecording } from '@/hooks/use-mic-recording';
 import type { VisibilityType } from './visibility-selector';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { chatModels } from '@/lib/ai/models';
@@ -54,6 +61,7 @@ function PureMultimodalInput({
   className,
   selectedVisibilityType,
   selectedModelId,
+  characterSelector,
 }: {
   chatId: string;
   input: string;
@@ -68,6 +76,7 @@ function PureMultimodalInput({
   className?: string;
   selectedVisibilityType: VisibilityType;
   selectedModelId: string;
+  characterSelector?: React.ReactNode;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { width } = useWindowSize();
@@ -211,6 +220,62 @@ function PureMultimodalInput({
 
   const { isAtBottom, scrollToBottom } = useScrollToBottom();
 
+  // Microphone recording hook
+  const {
+    start: startRecording,
+    stop: stopRecording,
+    transcribe,
+    status: micStatus,
+    error: micError,
+    isPermissionDenied,
+  } = useMicRecording();
+
+  useEffect(() => {
+    if (micError) {
+      toast.error(micError);
+    }
+    if (isPermissionDenied) {
+      toast.error('Microphone permission denied');
+    }
+  }, [micError, isPermissionDenied]);
+
+  const handleMicClick = useCallback(async () => {
+    if (micStatus === 'idle' || micStatus === 'error') {
+      await startRecording();
+    } else if (micStatus === 'recording') {
+      stopRecording();
+    }
+  }, [micStatus, startRecording, stopRecording]);
+
+  // When recording stops due to silence or user action, transcribe and send
+  useEffect(() => {
+    const run = async () => {
+      const { text } = await transcribe('en');
+      if (text && text.trim().length > 0) {
+        sendMessage({
+          role: 'user',
+          parts: [
+            ...attachments.map((attachment) => ({
+              type: 'file' as const,
+              url: attachment.url,
+              name: attachment.name,
+              mediaType: attachment.contentType,
+            })),
+            { type: 'text', text },
+          ],
+        });
+        setAttachments([]);
+        setLocalStorageInput('');
+        resetHeight();
+        setInput('');
+      }
+    };
+    if (micStatus === 'processing') {
+      run();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [micStatus]);
+
   useEffect(() => {
     if (status === 'submitted') {
       scrollToBottom();
@@ -317,7 +382,7 @@ function PureMultimodalInput({
           minHeight={72}
           maxHeight={200}
           disableAutoResize={true}
-          className="text-base resize-none py-4 px-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-transparent !border-0 !border-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
+          className="text-base resize-none p-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] bg-transparent !border-0 !border-none outline-none ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none"
           rows={1}
           autoFocus
         />
@@ -325,6 +390,28 @@ function PureMultimodalInput({
           <PromptInputTools className="gap-2">
             <AttachmentsButton fileInputRef={fileInputRef} status={status} />
             <ModelSelectorCompact selectedModelId={selectedModelId} />
+            {characterSelector}
+            <Button
+              className="rounded-md p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+              onClick={(e) => {
+                e.preventDefault();
+                handleMicClick();
+              }}
+              disabled={status !== 'ready'}
+              variant="ghost"
+              aria-label={
+                micStatus === 'recording' ? 'Stop recording' : 'Start recording'
+              }
+              title={
+                micStatus === 'recording' ? 'Stop recording' : 'Start recording'
+              }
+            >
+              {micStatus === 'recording' ? (
+                <MicOffIcon size={14} />
+              ) : (
+                <MicIcon size={14} />
+              )}
+            </Button>
           </PromptInputTools>
           {status === 'submitted' ? (
             <StopButton stop={stop} setMessages={setMessages} />

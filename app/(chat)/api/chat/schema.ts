@@ -1,3 +1,4 @@
+import type * as Eryn from '@/lib/ai/prompt-templates/Eryn.card';
 import { z } from 'zod';
 
 const textPartSchema = z.object({
@@ -21,8 +22,18 @@ export const postRequestBodySchema = z.object({
     role: z.enum(['user']),
     parts: z.array(partSchema),
   }),
-  selectedChatModel: z.enum(['chat-model', 'chat-model-reasoning']),
+  selectedChatModel: z.enum([
+    'chat-model',
+    'chat-model-reasoning',
+    'chat-model-common',
+    'chat-model-kimi',
+    'chat-model-r1',
+    'chat-model-glm',
+  ]),
   selectedVisibilityType: z.enum(['public', 'private']),
+  selectedCharacterCard: z.object({}).passthrough() as unknown as z.ZodType<
+    typeof Eryn.ErynCard
+  >,
 });
 
 export type PostRequestBody = z.infer<typeof postRequestBodySchema>;

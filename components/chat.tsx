@@ -2,11 +2,11 @@
 
 import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
-import { fetcher, fetchWithErrorHandlers, generateUUID, cn } from '@/lib/utils';
+import { fetcher, fetchWithErrorHandlers, generateUUID } from '@/lib/utils';
 import { Artifact } from './artifact';
 import { MultimodalInput } from './multimodal-input';
 import { Messages } from './messages';
@@ -22,6 +22,8 @@ import { useAutoResume } from '@/hooks/use-auto-resume';
 import { ChatSDKError } from '@/lib/errors';
 import type { Attachment, ChatMessage } from '@/lib/types';
 import { useDataStream } from './data-stream-provider';
+import { useTTS } from './tts-provider';
+import CharacterSelectorComponent from './character-selector';
 
 export function Chat({
   id,
@@ -49,6 +51,16 @@ export function Chat({
   const { setDataStream } = useDataStream();
 
   const [input, setInput] = useState<string>('');
+  const { enabled, speak, stop: stopTTS } = useTTS();
+
+  const [selectedCharacterCard, setSelectedCharacterCard] = useState<any>(null);
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(
+    null,
+  );
+  const selectedCharacterCardRef = useRef<any>(null);
+  useEffect(() => {
+    selectedCharacterCardRef.current = selectedCharacterCard;
+  }, [selectedCharacterCard]);
 
   const {
     messages,
@@ -73,6 +85,8 @@ export function Chat({
             message: messages.at(-1),
             selectedChatModel: initialChatModel,
             selectedVisibilityType: visibilityType,
+            selectedCharacterCard:
+              selectedCharacterCardRef.current ?? undefined,
             ...body,
           },
         };
@@ -119,6 +133,30 @@ export function Chat({
   const [attachments, setAttachments] = useState<Array<Attachment>>([]);
   const isArtifactVisible = useArtifactSelector((state) => state.isVisible);
 
+  // Speak latest assistant message when status becomes 'ready', ensure once per message id
+  const lastSpokenMessageIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (status !== 'ready' || !enabled) return;
+    const lastAssistant = [...messages]
+      .reverse()
+      .find((m) => m.role === 'assistant');
+    if (!lastAssistant || lastAssistant.id === lastSpokenMessageIdRef.current)
+      return;
+    const text = lastAssistant.parts
+      ?.filter((p) => p.type === 'text' && typeof (p as any).text === 'string')
+      .map((p: any) => p.text as string)
+      .join('\n')
+      .trim();
+    if (!text) return;
+    lastSpokenMessageIdRef.current = lastAssistant.id;
+    try {
+      stopTTS();
+      void speak(text);
+    } catch (err) {
+      console.error('TTS speak error:', err);
+    }
+  }, [status, messages, enabled, speak, stopTTS]);
+
   useAutoResume({
     autoResume,
     initialMessages,
@@ -147,7 +185,7 @@ export function Chat({
           isArtifactVisible={isArtifactVisible}
         />
 
-        <div className="sticky bottom-0 flex gap-2 px-4 pb-4 mx-auto w-full bg-background md:pb-6 md:max-w-3xl z-[1] border-t-0">
+        <div className="sticky bottom-0 flex flex-col gap-2 px-4 pb-4 mx-auto w-full bg-background md:pb-6 md:max-w-3xl z-[1] border-t-0">
           {!isReadonly && (
             <MultimodalInput
               chatId={id}
@@ -162,6 +200,26 @@ export function Chat({
               sendMessage={sendMessage}
               selectedVisibilityType={visibilityType}
               selectedModelId={initialChatModel}
+              characterSelector={
+                <CharacterSelectorComponent
+                  selectedCharacterId={selectedCharacterId}
+                  onSelect={(character) => {
+                    setSelectedCharacterId(character?.id ?? null);
+                    setSelectedCharacterCard(
+                      character?.characterCard
+                        ? (() => {
+                            try {
+                              return JSON.parse(character.characterCard as any);
+                            } catch (_) {
+                              return null;
+                            }
+                          })()
+                        : null,
+                    );
+                  }}
+                  className="md:px-2 md:h-[34px]"
+                />
+              }
             />
           )}
         </div>

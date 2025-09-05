@@ -24,7 +24,6 @@ import { updateDocument } from '@/lib/ai/tools/update-document';
 import { requestSuggestions } from '@/lib/ai/tools/request-suggestions';
 import { getWeather } from '@/lib/ai/tools/get-weather';
 import { isProductionEnvironment } from '@/lib/constants';
-import { myProvider } from '@/lib/ai/providers';
 import { entitlementsByUserType } from '@/lib/ai/entitlements';
 import { postRequestBodySchema, type PostRequestBody } from './schema';
 import { geolocation } from '@vercel/functions';
@@ -37,7 +36,10 @@ import { ChatSDKError } from '@/lib/errors';
 import type { ChatMessage } from '@/lib/types';
 import type { ChatModel } from '@/lib/ai/models';
 import type { VisibilityType } from '@/components/visibility-selector';
-
+import { getCherryBoxModelMessages } from '@/lib/ai/prompt-templates/CherryBox_1.4';
+import { myProvider } from '@/lib/ai/providers';
+import { charactersTool } from '@/lib/ai/tools/create-new-char-card';
+import { ErynCard } from '@/lib/ai/prompt-templates/Eryn.card';
 export const maxDuration = 60;
 
 let globalStreamContext: ResumableStreamContext | null = null;
@@ -78,11 +80,13 @@ export async function POST(request: Request) {
       message,
       selectedChatModel,
       selectedVisibilityType,
+      selectedCharacterCard,
     }: {
       id: string;
       message: ChatMessage;
       selectedChatModel: ChatModel['id'];
       selectedVisibilityType: VisibilityType;
+      selectedCharacterCard: typeof ErynCard;
     } = requestBody;
 
     const session = await auth();
@@ -153,28 +157,25 @@ export async function POST(request: Request) {
       execute: ({ writer: dataStream }) => {
         const result = streamText({
           model: myProvider.languageModel(selectedChatModel),
-          system: systemPrompt({ selectedChatModel, requestHints }),
-          messages: convertToModelMessages(uiMessages),
+          // system: systemPrompt({ selectedChatModel, requestHints }),
+          messages: [
+            ...getCherryBoxModelMessages(
+              selectedCharacterCard ? selectedCharacterCard : ErynCard,
+            ),
+            ...convertToModelMessages(uiMessages),
+          ],
           stopWhen: stepCountIs(5),
-          experimental_activeTools:
-            selectedChatModel === 'chat-model-reasoning'
-              ? []
-              : [
-                  'getWeather',
-                  'createDocument',
-                  'updateDocument',
-                  'requestSuggestions',
-                ],
           experimental_transform: smoothStream({ chunking: 'word' }),
-          tools: {
-            getWeather,
-            createDocument: createDocument({ session, dataStream }),
-            updateDocument: updateDocument({ session, dataStream }),
-            requestSuggestions: requestSuggestions({
-              session,
-              dataStream,
-            }),
-          },
+          // tools: {
+          //   getWeather,
+          //   createDocument: createDocument({ session, dataStream }),
+          //   updateDocument: updateDocument({ session, dataStream }),
+          //   requestSuggestions: requestSuggestions({
+          //     session,
+          //     dataStream,
+          //   }),
+          //   // characters: charactersTool({ session, dataStream }),
+          // },
           experimental_telemetry: {
             isEnabled: isProductionEnvironment,
             functionId: 'stream-text',

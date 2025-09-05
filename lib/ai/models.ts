@@ -9,12 +9,22 @@ export interface ChatModel {
 export const chatModels: Array<ChatModel> = [
   {
     id: 'chat-model',
-    name: 'Grok Vision',
-    description: 'Advanced multimodal model with vision and text capabilities',
+    name: 'DeepSeek V3.1',
+    description: 'Advanced deepseek v3.1 model with text capabilities',
   },
   {
     id: 'chat-model-reasoning',
-    name: 'Grok Reasoning',
-    description: 'Uses advanced chain-of-thought reasoning for complex problems',
+    name: 'GPT-OSS 120B',
+    description: 'Advanced gpt-oss model with text capabilities',
+  },
+  {
+    id: 'chat-model-common',
+    name: 'DeepSeek V3',
+    description: 'Advanced deepseek v3 model with text capabilities',
+  },
+  {
+    id: 'chat-model-kimi',
+    name: 'Kimi K2 Instruct',
+    description: 'Advanced model kimi k2 instruct with text capabilities',
   },
 ];
