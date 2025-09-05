@@ -37,7 +37,15 @@ export async function POST(request: NextRequest) {
     console.log('text', text);
 
     // Remove text wrapped in asterisks (e.g., *action* or *emotion*)
-    const cleanedText = text.replace(/\*[^*]*\*/g, '').trim();
+    // const cleanedText = text.replace(/\*[^*]*\*/g, '').trim();
+    // Extract text within double quotation marks
+    const quotedTextMatches = text.match(/"([^"]*)"/g);
+    const cleanedText = quotedTextMatches
+      ? quotedTextMatches
+          .map((match) => match.slice(1, -1))
+          .join(' ')
+          .trim()
+      : text.trim();
 
     if (!cleanedText || cleanedText.length === 0) {
       return new Response(

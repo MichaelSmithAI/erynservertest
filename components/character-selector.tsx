@@ -63,7 +63,7 @@ export function CharacterSelector({
       >
         <Button
           variant="outline"
-          className="text-[8px] pl-1 pr-0"
+          className="text-[8px] justify-start pl-1 pr-0 overflow-hidden"
           disabled={disabled}
         >
           {selected?.name || optimisticName || 'Select character'}

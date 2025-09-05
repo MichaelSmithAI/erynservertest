@@ -35,7 +35,7 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               className="flex flex-row gap-3 items-center"
             >
               <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
-                Chatbot
+                Eryn Testing
               </span>
             </Link>
             <Tooltip>
@@ -55,6 +55,13 @@ export function AppSidebar({ user }: { user: User | undefined }) {
               </TooltipTrigger>
               <TooltipContent align="end">New Chat</TooltipContent>
             </Tooltip>
+          </div>
+          <div className="flex flex-row justify-between items-center">
+            <Link href="/cardmod">
+              <span className="text-xs text-pink-500 font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
+                Cards
+              </span>
+            </Link>
           </div>
         </SidebarMenu>
       </SidebarHeader>

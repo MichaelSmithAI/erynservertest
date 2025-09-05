@@ -19,6 +19,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import Link from 'next/link';
 
 export default function CharacterEditorPage() {
   const { data: characters, mutate } = useSWR<Array<Characters>>(
@@ -429,6 +430,12 @@ export default function CharacterEditorPage() {
   return (
     <div className="container mx-auto max-w-5xl p-4 md:p-8 flex flex-col gap-6">
       <h1 className="text-xl font-semibold">Character Manager</h1>
+      <Link
+        className="text-sm font-semibold text-pink-500 text-muted-foreground"
+        href="/"
+      >
+        Back to Home
+      </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-6">
         <div className="flex flex-col gap-2">
