@@ -18,6 +18,8 @@ type TTSContextValue = {
   ) => Promise<void>;
   stop: () => void;
   isSpeaking: boolean;
+  hasAutoplayError: boolean;
+  playStoredAudio: () => Promise<void>;
 };
 
 const TTSContext = createContext<TTSContextValue | null>(null);
@@ -25,8 +27,10 @@ const TTSContext = createContext<TTSContextValue | null>(null);
 export function TTSProvider({ children }: { children: React.ReactNode }) {
   const [enabled, setEnabled] = useState<boolean>(true);
   const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [hasAutoplayError, setHasAutoplayError] = useState<boolean>(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
+  const storedAudioRef = useRef<Blob | null>(null);
 
   const stop = () => {
     if (audioRef.current) {
@@ -38,7 +42,32 @@ export function TTSProvider({ children }: { children: React.ReactNode }) {
       objectUrlRef.current = null;
     }
     setIsSpeaking(false);
+    setHasAutoplayError(false);
+    storedAudioRef.current = null;
   };
+
+  const playStoredAudio = useCallback(async () => {
+    if (!storedAudioRef.current) return;
+
+    try {
+      const url = URL.createObjectURL(storedAudioRef.current);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(url);
+        setHasAutoplayError(false);
+        storedAudioRef.current = null;
+      };
+
+      setIsSpeaking(true);
+      await audio.play();
+    } catch (err) {
+      console.error('Stored audio play error:', err);
+      setIsSpeaking(false);
+    }
+  }, []);
 
   const speak = useCallback(
     async (text: string, options?: { voice?: string; language?: string }) => {
@@ -77,6 +106,8 @@ export function TTSProvider({ children }: { children: React.ReactNode }) {
         }
         const audioBuffer = await res.arrayBuffer();
         const blob = new Blob([audioBuffer], { type: contentType });
+        storedAudioRef.current = blob;
+
         const url = URL.createObjectURL(blob);
         objectUrlRef.current = url;
 
@@ -88,8 +119,24 @@ export function TTSProvider({ children }: { children: React.ReactNode }) {
             URL.revokeObjectURL(objectUrlRef.current);
             objectUrlRef.current = null;
           }
+          storedAudioRef.current = null;
+          setHasAutoplayError(false);
         };
-        await audio.play();
+
+        try {
+          await audio.play();
+        } catch (playError: any) {
+          // Handle autoplay policy error
+          if (playError.name === 'NotAllowedError') {
+            console.warn(
+              'Autoplay blocked by browser policy. Audio stored for manual playback.',
+            );
+            setHasAutoplayError(true);
+            setIsSpeaking(false);
+            return;
+          }
+          throw playError;
+        }
       } catch (err) {
         console.error('TTS play error:', err);
         setIsSpeaking(false);
@@ -99,8 +146,16 @@ export function TTSProvider({ children }: { children: React.ReactNode }) {
   );
 
   const value = useMemo(
-    () => ({ enabled, setEnabled, speak, stop, isSpeaking }),
-    [enabled, isSpeaking, speak],
+    () => ({
+      enabled,
+      setEnabled,
+      speak,
+      stop,
+      isSpeaking,
+      hasAutoplayError,
+      playStoredAudio,
+    }),
+    [enabled, isSpeaking, speak, hasAutoplayError, playStoredAudio],
   );
 
   return <TTSContext.Provider value={value}>{children}</TTSContext.Provider>;

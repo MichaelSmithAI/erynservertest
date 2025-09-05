@@ -51,7 +51,13 @@ export function Chat({
   const { setDataStream } = useDataStream();
 
   const [input, setInput] = useState<string>('');
-  const { enabled, speak, stop: stopTTS } = useTTS();
+  const {
+    enabled,
+    speak,
+    stop: stopTTS,
+    hasAutoplayError,
+    playStoredAudio,
+  } = useTTS();
 
   const [selectedCharacterCard, setSelectedCharacterCard] = useState<any>(null);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(

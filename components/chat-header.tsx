@@ -13,7 +13,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { type VisibilityType, VisibilitySelector } from './visibility-selector';
 import type { Session } from 'next-auth';
 import { useTTS } from './tts-provider';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Play } from 'lucide-react';
 
 function PureChatHeader({
   chatId,
@@ -30,7 +30,7 @@ function PureChatHeader({
   const { open } = useSidebar();
 
   const { width: windowWidth } = useWindowSize();
-  const { enabled, setEnabled } = useTTS();
+  const { enabled, setEnabled, hasAutoplayError, playStoredAudio } = useTTS();
 
   return (
     <header className="flex sticky top-0 bg-background py-1.5 items-center px-2 md:px-2 gap-2">
@@ -64,6 +64,23 @@ function PureChatHeader({
       )}
 
       <div className="ml-auto flex items-center gap-2 order-3">
+        {hasAutoplayError && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="outline"
+                className="px-2 md:h-fit h-fit bg-orange-500 hover:bg-orange-600 text-white border-orange-500"
+                onClick={() => playStoredAudio()}
+                aria-label="Play stored audio"
+              >
+                <Play size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Play stored audio (autoplay was blocked)
+            </TooltipContent>
+          </Tooltip>
+        )}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button

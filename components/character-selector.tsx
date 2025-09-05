@@ -57,13 +57,13 @@ export function CharacterSelector({
       <DropdownMenuTrigger
         asChild
         className={cn(
-          'w-fit data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
+          'w-fit max-w-[100px] data-[state=open]:bg-accent data-[state=open]:text-accent-foreground',
           className,
         )}
       >
         <Button
           variant="outline"
-          className="md:px-2 md:h-[34px]"
+          className="text-[8px] pl-1 pr-0"
           disabled={disabled}
         >
           {selected?.name || optimisticName || 'Select character'}
