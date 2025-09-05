@@ -34,9 +34,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    console.log('text', text);
+
+    // Remove text wrapped in asterisks (e.g., *action* or *emotion*)
+    const cleanedText = text.replace(/\*[^*]*\*/g, '').trim();
+
+    if (!cleanedText || cleanedText.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'No speakable text after filtering' }),
+        {
+          status: 400,
+          headers: { 'content-type': 'application/json' },
+        },
+      );
+    }
+    console.log('cleanedText', cleanedText);
     const result = await generateSpeech({
       model: elevenlabs.speech('eleven_turbo_v2_5'),
-      text,
+      text: cleanedText,
       voice: 'jZPrG0t6FOc6pSrEustX',
       language,
     });
